@@ -11,15 +11,21 @@ window.onload = function () {
     //On "Add to Cart" click
     function OnAddClick(event) {
         let target = event.currentTarget;
-
-        //GetCartCount();
         ProductIntoCartProduct(target.id, (target.classList[0] + " " + target.classList[1]));
-        GetCartCount();
+    }
+
+    let m_elems = document.getElementsByClassName("minus-from-cart");
+    for (let i = 0; i < m_elems.length; i++) {
+        m_elems[i].addEventListener('click', OnMinusClick);
+    }
+
+    function OnMinusClick(event) {
+        let target = event.currentTarget;
+        MinusCartProduct(target.id, (target.classList[0] + " " + target.classList[1]));
     }
 }
 
-
-function GetCartCount() {
+/*function GetCartCount() {
     let xhr = new XMLHttpRequest();
 
     xhr.open("GET", "/Gallery/CartCount")
@@ -38,7 +44,7 @@ function GetCartCount() {
             elem.innerHTML = data;
         }
     }
-}
+}*/
 
 //Product goes into cart
 function ProductIntoCartProduct(productId, productName) {
@@ -66,7 +72,37 @@ function ProductIntoCartProduct(productId, productName) {
         ProductName: productName,
     };
 
-    alert("Added " + productName + " to Cart")
+    alert("Adding " + productName + " to Cart");
+
+    xhr.send(JSON.stringify(product));
+}
+
+function MinusCartProduct(productId, productName) {
+    let xhr = new XMLHttpRequest();
+
+    xhr.open("POST", "/Gallery/MinusProductToCart");
+    xhr.setRequestHeader("Content-Type", "application/json; charset=utf8");
+
+    xhr.onreadystatechange = function () {
+        if (this.readyState == XMLHttpRequest.DONE) {
+            if (this.status != 200) {
+                return;
+            }
+
+            let data = JSON.parse(this.responseText);
+            if (data.status == "success") {
+                window.location.reload(true);
+            }
+        }
+    }
+
+    //package as Json object
+    let product = {
+        ProductId: productId,
+        ProductName: productName,
+    };
+
+    alert("Removing " + productName + " from Cart");
 
     xhr.send(JSON.stringify(product));
 }

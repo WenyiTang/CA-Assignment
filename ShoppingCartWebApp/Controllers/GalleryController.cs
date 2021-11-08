@@ -25,9 +25,7 @@ namespace ShoppingCartWebApp.Controllers
 
         public IActionResult Index(string searchStr)
         {
-            
-            Debug.WriteLine("Start of Gallery/Index");
-            Debug.WriteLine($"Gallery/Index, user: {Request.Cookies["Username"]}, session: {Request.Cookies["SessionId"]}");
+           
             Session session = GetSession();
             if (session == null)
             {
@@ -39,11 +37,6 @@ namespace ShoppingCartWebApp.Controllers
                 };
                 dbContext.Sessions.Add(session);
                 dbContext.SaveChanges();
-                Debug.WriteLine("Creating new session for guest");
-                Debug.WriteLine($"Gallery/Index, user: {user.Username}, session: {session.Id}");
-
-                
-            
 
                 Response.Cookies.Append("SessionId", session.Id.ToString());
                 Response.Cookies.Append("Username", user.Username);
@@ -54,7 +47,7 @@ namespace ShoppingCartWebApp.Controllers
                 ViewData["username"] = Request.Cookies["Username"];
             }
 
-            List<ShoppingCartWebApp.Models.Product> products = dbContext.products.Where(x =>
+            List<Product> products = dbContext.products.Where(x =>
                x.Id != null
                 ).ToList();
             ViewData["username"] = session.User.Username;
@@ -80,6 +73,88 @@ namespace ShoppingCartWebApp.Controllers
 
             return Json(new { status = "success" });
         }
+
+        public IActionResult MinusProductToCart([FromBody] PdtToCart product)
+        {
+            Session session = GetSession();
+
+            string productId = product.ProductId;
+
+            db.ReduceProductFromCart(session.Id, productId);
+
+            return Json(new { status = "success" });
+        }
+
+        /*public IActionResult EditProductQty([FromBody] ProductNum product)
+        {
+            Session session = GetSession();
+
+            string productId = product.ProductId;
+            int newQty = product.QtyNum;
+
+            List<Cart> pdtincarts = dbContext.carts.Where(
+                x => x.product.Id == productId && x.user.Id == session.User.Id).ToList();
+
+            int currQty = pdtincarts.Count();
+            int diff = newQty - currQty;
+            if (diff < 0)
+            {
+                diff = -diff;
+                for (int y = 0; y < diff; y++)
+                {
+                    Cart cart = dbContext.carts.FirstOrDefault(
+                        x => x.product.Id == productId && x.user.Id == session.User.Id);
+                    dbContext.Remove(cart);
+                    dbContext.SaveChanges();
+                }
+            }
+            else if (diff > 0)
+            {
+                for (int y = 0; y < diff; y++)
+                {
+                    db.AddLibraryToCart(session.Id, productId);
+                }
+            }
+
+            return Json(new { status = "success" });
+        }*/
+
+        public IActionResult EditProductQty(IFormCollection form)
+        {
+            string qty = form["qty"];
+            string productId = form["productId"];
+
+            Session session = GetSession();
+
+            int newQty = Convert.ToInt32(qty);
+
+            List<Cart> pdtincarts = dbContext.carts.Where(
+                x => x.product.Id == productId && x.user.Id == session.User.Id).ToList();
+
+            int currQty = pdtincarts.Count();
+            int diff = newQty - currQty;
+            if (diff < 0)
+            {
+                diff = -diff;
+                for (int y = 0; y < diff; y++)
+                {
+                    Cart cart = dbContext.carts.FirstOrDefault(
+                        x => x.product.Id == productId && x.user.Id == session.User.Id);
+                    dbContext.Remove(cart);
+                    dbContext.SaveChanges();
+                }
+            }
+            else if (diff > 0)
+            {
+                for (int y = 0; y < diff; y++)
+                {
+                    db.AddLibraryToCart(session.Id, productId);
+                }
+            }
+
+            return RedirectToAction("ShoppingCart", "Cart");
+        }
+
         public int CartCount()
         {
             Session session = GetSession();

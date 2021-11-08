@@ -19,11 +19,8 @@ namespace ShoppingCartWebApp.Controllers
             this.dbContext = dbContext;
             db = new DB(this.dbContext);
         }
-
-
         
-        
-        public ActionResult ShoppingCart(string clickedBtn)
+        public ActionResult ShoppingCart()
         {
             if (Request.Cookies["SessionId"] != null)
             {
@@ -33,80 +30,35 @@ namespace ShoppingCartWebApp.Controllers
                 string username = session.User.Username;
                 ViewData["username"] = username;
 
-                if (clickedBtn == null)
+                var tupList = db.getCartViewList(sessionId);
+                List<int> QuantityList = tupList.Item1;
+                List<Product> ProductList = tupList.Item2;
+                ViewData["ProductList"] = ProductList;
+                ViewData["QuantityList"] = QuantityList;
+                double tp = 0;
+                double pp;
+
+                List<float> pricelist = new List<float>();
+                foreach (var product in ProductList)
                 {
-                    var tupList = db.getCartViewList(sessionId);
-                    List<int> QuantityList = tupList.Item1;
-                    List<Product> ProductList = tupList.Item2;
-                    ViewData["ProductList"] = ProductList;
-                    ViewData["QuantityList"] = QuantityList;
-                    //Calculation of total price "tp" means total price
-                    double tp = 0;
-                    double pp;
-                    List<float> pricelist = new List<float>();
-                    foreach (var product in ProductList)
-                    {
-                        pricelist.Add(product.Price);
-                    }
-
-                    var res = pricelist.Zip(QuantityList, (n, w) => new { Price = n, Quantity = w });
-                    foreach (var a in res)
-                    {
-                        pp = a.Price * a.Quantity;
-
-                        tp += pp;
-                    }
-                    ViewData["tp"] = Convert.ToString(tp);
+                    pricelist.Add(product.Price);
                 }
-                else
+
+                var res = pricelist.Zip(QuantityList, (n, w) => new { Price = n, Quantity = w });
+                foreach (var a in res)
                 {
+                    pp = a.Price * a.Quantity;
 
-                    string startStr = clickedBtn.Substring(0, 1);
-                    //add 
-                    if (startStr == "a")
-                    {
-                        string productId = clickedBtn.Substring(2);
-                        db.AddLibraryToCart(sessionId, productId);
-
-                    }
-                    else if (startStr == "r")
-                    { //reduce
-                        string productId = clickedBtn.Substring(2);
-                        db.ReduceProductFromCart(sessionId, productId);
-                    }
-
-
-                    var tupList = db.getCartViewList(sessionId);
-                    List<int> QuantityList = tupList.Item1;
-                    List<Product> ProductList = tupList.Item2;
-                    ViewData["ProductList"] = ProductList;
-                    ViewData["QuantityList"] = QuantityList;
-                    double tp = 0;
-                    double pp;
-
-                    List<float> pricelist = new List<float>();
-                    foreach (var product in ProductList)
-                    {
-                        pricelist.Add(product.Price);
-                    }
-
-                    var res = pricelist.Zip(QuantityList, (n, w) => new { Price = n, Quantity = w });
-                    foreach (var a in res)
-                    {
-                        pp = a.Price * a.Quantity;
-
-                        tp += pp;
-                    }
-                    ViewData["tp"] = Convert.ToString(tp);
-
+                    tp += pp;
                 }
+                ViewData["tp"] = Convert.ToString(tp);
 
                 if (session == null)
                 {
                     return RedirectToAction("Index", "Login");
                 }
-
             }
+
             else
             {
                 return RedirectToAction("Index", "Login");
